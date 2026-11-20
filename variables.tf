@@ -169,12 +169,23 @@ variable "message_retention_duration" {
 
 variable "default_table_expiration_ms" {
   type        = number
-  description = "Default expiration for tables and partitions in the dataset, in milliseconds"
-  default     = 7776000000
+  description = "Default lifetime of tables created in the dataset, in milliseconds. Tables are deleted when it expires. null (the default) keeps tables indefinitely"
+  default     = null
 
   validation {
-    condition     = var.default_table_expiration_ms >= 3600000
-    error_message = "var.default_table_expiration_ms must be at least 3600000 (one hour)"
+    condition     = var.default_table_expiration_ms == null ? true : var.default_table_expiration_ms >= 3600000
+    error_message = "var.default_table_expiration_ms must be null or at least 3600000 (one hour)"
+  }
+}
+
+variable "default_partition_expiration_ms" {
+  type        = number
+  description = "Default lifetime of each partition in partitioned tables in the dataset, in milliseconds. Old partitions are deleted, the table is kept. null (the default) keeps partitions indefinitely"
+  default     = null
+
+  validation {
+    condition     = var.default_partition_expiration_ms == null ? true : var.default_partition_expiration_ms >= 3600000
+    error_message = "var.default_partition_expiration_ms must be null or at least 3600000 (one hour)"
   }
 }
 

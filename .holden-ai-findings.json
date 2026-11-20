@@ -75,22 +75,23 @@
       "explanation": "default_table_expiration_ms and default_partition_expiration_ms are both set from var.default_table_expiration_ms (default 7776000000, 90 days). A module whose purpose is IAM ownership therefore also expires whole tables 90 days after creation by default, and a caller cannot keep tables while expiring old partitions. Medium confidence: the variable description does state it covers both.",
       "file": "google_bigquery_dataset.target.tf",
       "first_seen": "2026-11-20",
-      "fixable": false,
+      "fixable": true,
       "id": "HOLDEN_AI_004",
       "last_seen": "2026-11-20",
       "line": 1,
       "principle": "data-protection",
       "related_resources": [
-        "variable.default_table_expiration_ms"
+        "variable.default_table_expiration_ms",
+        "variable.default_partition_expiration_ms"
       ],
       "remediation": "Split into separate table and partition expiration variables and consider a null (no expiry) default for tables.",
-      "resolution_note": "Not fixed: splitting the variable or changing the 90-day default changes retention behaviour for existing deployments with no security gain beyond what the documented variable already allows; callers can raise default_table_expiration_ms today.",
+      "resolution_note": "Fixed (breaking): default_partition_expiration_ms is now driven by a new variable var.default_partition_expiration_ms, and both var.default_table_expiration_ms and var.default_partition_expiration_ms default to null (no expiry). Existing deployments that relied on the previous 90-day default will have table and partition expiry removed on next apply unless they set the variables explicitly. HLD_GCP_173 (dataset must set a default table expiration) is suppressed inline with the justification that retention is the caller's decision.",
       "resource": "google_bigquery_dataset.target",
       "severity": "LOW",
-      "status": "open",
+      "status": "fixed",
       "suppression_reason": null,
       "title": "One variable drives both table and partition expiration, and its default deletes every table in the dataset after 90 days",
-      "unresolved_since": "2026-11-20"
+      "unresolved_since": null
     }
   ],
   "scan_date": "2026-11-20T00:00:00Z",

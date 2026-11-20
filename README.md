@@ -122,7 +122,8 @@ No modules.
 | <a name="input_caa_records"></a> [caa\_records](#input\_caa\_records) | CAA records restricting which certificate authorities may issue for the zone | `list(string)` | <pre>[<br/>  "0 issue \"pki.goog\""<br/>]</pre> | no |
 | <a name="input_dataset_id"></a> [dataset\_id](#input\_dataset\_id) | ID of the BigQuery dataset whose access entries this module owns | `string` | n/a | yes |
 | <a name="input_dataset_viewer_groups"></a> [dataset\_viewer\_groups](#input\_dataset\_viewer\_groups) | Email addresses of the groups granted roles/bigquery.dataViewer on the dataset | `list(string)` | `[]` | no |
-| <a name="input_default_table_expiration_ms"></a> [default\_table\_expiration\_ms](#input\_default\_table\_expiration\_ms) | Default expiration for tables and partitions in the dataset, in milliseconds | `number` | `7776000000` | no |
+| <a name="input_default_partition_expiration_ms"></a> [default\_partition\_expiration\_ms](#input\_default\_partition\_expiration\_ms) | Default lifetime of each partition in partitioned tables in the dataset, in milliseconds. Old partitions are deleted, the table is kept. null (the default) keeps partitions indefinitely | `number` | `null` | no |
+| <a name="input_default_table_expiration_ms"></a> [default\_table\_expiration\_ms](#input\_default\_table\_expiration\_ms) | Default lifetime of tables created in the dataset, in milliseconds. Tables are deleted when it expires. null (the default) keeps tables indefinitely | `number` | `null` | no |
 | <a name="input_dns_name"></a> [dns\_name](#input\_dns\_name) | DNS name of the managed zone, with a trailing dot | `string` | n/a | yes |
 | <a name="input_kms_key_name"></a> [kms\_key\_name](#input\_kms\_key\_name) | Resource name of the Cloud KMS key used by the topic and dataset (CMEK) | `string` | n/a | yes |
 | <a name="input_location"></a> [location](#input\_location) | Location of the BigQuery dataset | `string` | `"europe-west2"` | no |
