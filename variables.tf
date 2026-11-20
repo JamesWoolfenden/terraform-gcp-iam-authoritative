@@ -219,7 +219,21 @@ variable "project_bindings" {
   }
 
   validation {
-    condition     = length(var.project_bindings) == 0 || anytrue([for b in var.project_bindings : b.role == "roles/resourcemanager.projectIamAdmin"])
-    error_message = "var.project_bindings must include a roles/resourcemanager.projectIamAdmin binding, otherwise the apply locks everyone out of changing the policy again"
+    condition     = length(var.project_bindings) == 0 || anytrue([for b in var.project_bindings : b.role == "roles/resourcemanager.projectIamAdmin" && length(b.members) > 0])
+    error_message = "var.project_bindings must include a roles/resourcemanager.projectIamAdmin binding with at least one member, otherwise the apply locks everyone out of changing the policy again"
+  }
+}
+
+variable "project_audit_configs" {
+  type = list(object({
+    service   = string
+    log_types = list(string)
+  }))
+  description = "Audit log configs written with the project IAM policy when var.project_bindings is set. google_project_iam_policy replaces the project's audit configs too, so anything not listed here is removed"
+  default     = []
+
+  validation {
+    condition     = alltrue([for c in var.project_audit_configs : length(c.log_types) > 0 && alltrue([for t in c.log_types : contains(["ADMIN_READ", "DATA_READ", "DATA_WRITE"], t)])])
+    error_message = "var.project_audit_configs log_types must be non-empty and each one of ADMIN_READ, DATA_READ or DATA_WRITE"
   }
 }

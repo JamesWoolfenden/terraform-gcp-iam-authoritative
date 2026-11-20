@@ -40,6 +40,11 @@ primitive roles and public principals, and requires a
 changed after the apply. Build the list from `gcloud projects get-iam-policy`
 output, not from scratch.
 
+The project policy also carries the project's audit log configuration. Any
+Data Access audit config not listed in `var.project_audit_configs` is removed
+by the apply, so copy the `auditConfigs` from the same `gcloud` output into it.
+`var.project` must be set whenever `var.project_bindings` is.
+
 `google_bigquery_dataset_access` has the same problem in reverse: it is a
 single access entry, and it conflicts with `google_bigquery_dataset_iam_*` on
 the same dataset. Pick one style per dataset.
@@ -123,6 +128,7 @@ No modules.
 | <a name="input_location"></a> [location](#input\_location) | Location of the BigQuery dataset | `string` | `"europe-west2"` | no |
 | <a name="input_message_retention_duration"></a> [message\_retention\_duration](#input\_message\_retention\_duration) | How long Pub/Sub retains published messages on the topic, in seconds with an s suffix | `string` | `"604800s"` | no |
 | <a name="input_project"></a> [project](#input\_project) | Project whose entire IAM policy is replaced when var.project\_bindings is set | `string` | `""` | no |
+| <a name="input_project_audit_configs"></a> [project\_audit\_configs](#input\_project\_audit\_configs) | Audit log configs written with the project IAM policy when var.project\_bindings is set. google\_project\_iam\_policy replaces the project's audit configs too, so anything not listed here is removed | <pre>list(object({<br/>    service   = string<br/>    log_types = list(string)<br/>  }))</pre> | `[]` | no |
 | <a name="input_project_bindings"></a> [project\_bindings](#input\_project\_bindings) | The COMPLETE project IAM policy. Every binding the project should have, including those Google service agents need. Empty (the default) leaves the project policy alone | <pre>list(object({<br/>    role    = string<br/>    members = list(string)<br/>  }))</pre> | `[]` | no |
 | <a name="input_service_account_id"></a> [service\_account\_id](#input\_service\_account\_id) | Account ID of the service account whose IAM policy this module owns | `string` | n/a | yes |
 | <a name="input_service_account_users"></a> [service\_account\_users](#input\_service\_account\_users) | The complete list of principals with roles/iam.serviceAccountUser on the service account. Anything not listed loses access | `list(string)` | n/a | yes |

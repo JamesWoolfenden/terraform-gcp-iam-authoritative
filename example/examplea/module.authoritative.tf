@@ -20,5 +20,8 @@ module "authoritative" {
   location     = "europe-west2"
   kms_key_name = google_kms_crypto_key.pubsub.id
 
-  depends_on = [google_kms_crypto_key_iam_member.pubsub_service_agent]
+  depends_on = [
+    google_kms_crypto_key_iam_member.pubsub_service_agent,
+    google_kms_crypto_key_iam_member.bigquery_encryption,
+  ]
 }

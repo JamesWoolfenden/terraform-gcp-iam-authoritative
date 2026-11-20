@@ -1,0 +1,25 @@
+id: LOCAL_GCP_001
+name: google_project_iam_policy must carry audit_config in its policy data
+principle: logging-and-monitoring
+severity: MEDIUM
+rationale: |
+  google_project_iam_policy writes the entire project IAM policy, including
+  auditConfigs. If the data.google_iam_policy it is built from has no
+  audit_config block, every Data Access audit log configuration on the
+  project is deleted on apply, and it conflicts with any
+  google_project_iam_audit_config managed elsewhere.
+message: |
+  google_project_iam_policy.policy_data comes from a data.google_iam_policy
+  with no audit_config block; applying it removes the project's audit configs.
+remediation: |
+  Add audit_config blocks to the data.google_iam_policy (for example
+  service = "allServices" with DATA_READ, DATA_WRITE and ADMIN_READ log
+  types), or use additive google_project_iam_member resources instead.
+resources:
+  google_project_iam_policy:
+    references:
+      via: policy_data
+      type: data.google_iam_policy
+      must:
+        path: audit_config
+        not_null: true

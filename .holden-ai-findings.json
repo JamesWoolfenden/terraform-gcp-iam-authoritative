@@ -1,0 +1,108 @@
+{
+  "category": "all",
+  "findings": [
+    {
+      "confidence": "medium",
+      "explanation": "google_project_iam_policy writes the whole project policy, auditConfigs included, and the provider documents that it fights google_project_iam_audit_config. data.google_iam_policy.project only emits binding blocks, so enabling var.project_bindings silently deletes every Data Access audit log setting on the project and there is no way to pass them through the module. No holden policy checks the policy_data source for audit_config on an authoritative project policy. Medium confidence because the impact depends on what audit configs the project currently has.",
+      "file": "google_project_iam_policy.project.tf",
+      "first_seen": "2026-11-20",
+      "fixable": false,
+      "id": "HOLDEN_AI_001",
+      "last_seen": "2026-11-20",
+      "line": 6,
+      "principle": "logging-and-monitoring",
+      "related_resources": [
+        "data.google_iam_policy.project"
+      ],
+      "remediation": "Add an optional var.project_audit_configs and render it as dynamic audit_config blocks in data.google_iam_policy.project; document that it is part of the complete policy.",
+      "resolution_note": "Fixed: added var.project_audit_configs, rendered as dynamic audit_config blocks in data.google_iam_policy.project, and documented in the README that unlisted audit configs are removed.",
+      "resource": "google_project_iam_policy.project",
+      "severity": "MEDIUM",
+      "status": "fixed",
+      "suppression_reason": null,
+      "title": "Project IAM policy is built with no audit_config, so applying it wipes the project's Data Access audit log configuration",
+      "unresolved_since": null
+    },
+    {
+      "confidence": "high",
+      "explanation": "var.project defaults to \"\" and its validation accepts the empty string, but nothing ties it to var.project_bindings. A caller who sets the bindings and forgets the project gets an apply-time API error (best-fit principle: the apply fails). The module's README promises the dangerous resource is guarded at input time.",
+      "file": "google_project_iam_policy.project.tf",
+      "first_seen": "2026-11-20",
+      "fix": "lifecycle {\n  precondition {\n    condition     = var.project != \"\"\n    error_message = \"var.project must be set when var.project_bindings is non-empty\"\n  }\n}",
+      "fixable": true,
+      "id": "HOLDEN_AI_002",
+      "last_seen": "2026-11-20",
+      "line": 6,
+      "principle": "reliability",
+      "related_resources": [
+        "variable.project",
+        "variable.project_bindings"
+      ],
+      "remediation": "Add a lifecycle precondition on google_project_iam_policy.project requiring var.project to be non-empty (preconditions work on tofu >= 1.2, unlike cross-variable validation).",
+      "resolution_note": "Fixed: lifecycle precondition on google_project_iam_policy.project requires var.project when var.project_bindings is set.",
+      "resource": "google_project_iam_policy.project",
+      "severity": "LOW",
+      "status": "fixed",
+      "suppression_reason": null,
+      "title": "Setting var.project_bindings without var.project passes an empty project ID to google_project_iam_policy",
+      "unresolved_since": null
+    },
+    {
+      "confidence": "high",
+      "explanation": "The validation only checks that some binding has role roles/resourcemanager.projectIamAdmin; a binding with members = [] satisfies it, and the applied policy then leaves nobody able to change project IAM, which is exactly the lockout the validation's error message says it prevents.",
+      "file": "variables.tf",
+      "first_seen": "2026-11-20",
+      "fix": "condition = length(var.project_bindings) == 0 || anytrue([for b in var.project_bindings : b.role == \"roles/resourcemanager.projectIamAdmin\" && length(b.members) > 0])",
+      "fixable": true,
+      "id": "HOLDEN_AI_003",
+      "last_seen": "2026-11-20",
+      "line": 203,
+      "principle": "identity-and-access",
+      "related_resources": [
+        "google_project_iam_policy.project"
+      ],
+      "remediation": "Require the projectIamAdmin binding to have at least one member.",
+      "resolution_note": "Fixed: the projectIamAdmin lockout validation now also requires at least one member.",
+      "resource": "variable.project_bindings",
+      "severity": "LOW",
+      "status": "fixed",
+      "suppression_reason": null,
+      "title": "Lockout guard on var.project_bindings accepts a projectIamAdmin binding with no members",
+      "unresolved_since": null
+    },
+    {
+      "confidence": "medium",
+      "explanation": "default_table_expiration_ms and default_partition_expiration_ms are both set from var.default_table_expiration_ms (default 7776000000, 90 days). A module whose purpose is IAM ownership therefore also expires whole tables 90 days after creation by default, and a caller cannot keep tables while expiring old partitions. Medium confidence: the variable description does state it covers both.",
+      "file": "google_bigquery_dataset.target.tf",
+      "first_seen": "2026-11-20",
+      "fixable": false,
+      "id": "HOLDEN_AI_004",
+      "last_seen": "2026-11-20",
+      "line": 1,
+      "principle": "data-protection",
+      "related_resources": [
+        "variable.default_table_expiration_ms"
+      ],
+      "remediation": "Split into separate table and partition expiration variables and consider a null (no expiry) default for tables.",
+      "resolution_note": "Not fixed: splitting the variable or changing the 90-day default changes retention behaviour for existing deployments with no security gain beyond what the documented variable already allows; callers can raise default_table_expiration_ms today.",
+      "resource": "google_bigquery_dataset.target",
+      "severity": "LOW",
+      "status": "open",
+      "suppression_reason": null,
+      "title": "One variable drives both table and partition expiration, and its default deletes every table in the dataset after 90 days",
+      "unresolved_since": "2026-11-20"
+    }
+  ],
+  "scan_date": "2026-11-20T00:00:00Z",
+  "scan_path": ".",
+  "suggested_policies": [
+    {
+      "first_seen": "2026-11-20",
+      "last_seen": "2026-11-20",
+      "rationale": "An authoritative google_project_iam_policy replaces the project's auditConfigs as well as its bindings. When the referenced data.google_iam_policy has no audit_config block, applying it removes Data Access audit logging. Concrete, resource-type-scoped and applies to any Terraform using these types; no built-in policy covers it (HLD_GCP_305/379 cover primitive roles and use of the resource, not audit config loss).",
+      "status": "installed",
+      "yaml": "id: LOCAL_GCP_001\nname: google_project_iam_policy must carry audit_config in its policy data\nprinciple: logging-and-monitoring\nseverity: MEDIUM\nrationale: |\n  google_project_iam_policy writes the entire project IAM policy, including\n  auditConfigs. If the data.google_iam_policy it is built from has no\n  audit_config block, every Data Access audit log configuration on the\n  project is deleted on apply, and it conflicts with any\n  google_project_iam_audit_config managed elsewhere.\nmessage: |\n  google_project_iam_policy.policy_data comes from a data.google_iam_policy\n  with no audit_config block; applying it removes the project's audit configs.\nremediation: |\n  Add audit_config blocks to the data.google_iam_policy (for example\n  service = \"allServices\" with DATA_READ, DATA_WRITE and ADMIN_READ log\n  types), or use additive google_project_iam_member resources instead.\nresources:\n  google_project_iam_policy:\n    references:\n      via: policy_data\n      type: data.google_iam_policy\n      must:\n        path: audit_config\n        not_null: true\n"
+    }
+  ],
+  "suggested_suppressions": []
+}
